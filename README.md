@@ -56,6 +56,13 @@ docker exec -it kafka kafka-consumer-groups --bootstrap-server kafka:9092 --desc
 
 ### avec la DSL fonctionnelle
 
+### tests unitaires
+
+### variation - filtrage via ̀map` avec la DSL
+
+## exemple #2 - linesplit
+
+
 ## à caser en quelque part
 
 - kafka-streams fourni 2 apis

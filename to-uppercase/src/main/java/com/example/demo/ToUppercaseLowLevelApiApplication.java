@@ -26,14 +26,19 @@ public class ToUppercaseLowLevelApiApplication {
     properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
     // définition de la "topologie" -> le stream processing que l'on va appliquer
-    Topology topology = new Topology();
-    topology.addSource("source", "to-uppercase-input");
-    topology.addProcessor("processor", ToUppercaseProcessor::new, "source");
-    topology.addSink("to-uppercase-input-sink", "to-uppercase-output","processor");
+    Topology topology = getTopology();
 
     // lancement de l'application kafka streams
     KafkaStreams streams = new KafkaStreams(topology, properties);
     streams.start();
+  }
+
+  private static Topology getTopology() {
+    Topology topology = new Topology();
+    topology.addSource("source", "to-uppercase-input");
+    topology.addProcessor("processor", ToUppercaseProcessor::new, "source");
+    topology.addSink("to-uppercase-input-sink", "to-uppercase-output","processor");
+    return topology;
   }
 
   private static class ToUppercaseProcessor implements Processor<String, String, String, String> {
