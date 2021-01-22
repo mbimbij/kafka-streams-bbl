@@ -12,6 +12,49 @@
   - https://kafka.apache.org/27/documentation/streams/core-concepts
 
 ## exemple #1 - to-uppercase
+- créer les topics manuellement avant (sinon erreur au démarrage)
+```shell
+docker exec -it kafka kafka-topics --create \
+    --bootstrap-server kafka:9092 \
+    --replication-factor 1 \
+    --partitions 1 \
+    --topic to-uppercase-input
+    
+docker exec -it kafka kafka-topics --create \
+    --bootstrap-server kafka:9092 \
+    --replication-factor 1 \
+    --partitions 1 \
+    --topic to-uppercase-output
+```
+
+- lister les topics:
+```shell
+docker exec -it kafka kafka-topics --list --bootstrap-server kafka:9092
+```
+
+- lister les consumer groups:
+```shell
+docker exec -it kafka kafka-consumer-groups --bootstrap-server kafka:9092 --list
+```
+
+- créer un producteur en ligne de commande
+```shell
+docker exec -it kafka kafka-console-producer --broker-list kafka:9092 --topic to-uppecase-input
+```
+
+- créer un consommateur en ligne de commande
+```shell
+docker exec -it kafka kafka-console-consumer --bootstrap-server kafka:9092 --topic to-uppercase-output
+```
+
+- décrire le consommateur lié à notre appli kafka-streams
+```shell
+docker exec -it kafka kafka-consumer-groups --bootstrap-server kafka:9092 --describe --group to-uppercase
+```
+
+### avec la DSL fonctionnelle
+
+### avec l'API 
 
 ## à caser en quelque part
 

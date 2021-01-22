@@ -1,19 +1,19 @@
 version: "3.3"
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.4.0
+    image: confluentinc/cp-zookeeper:6.0.1
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
   kafka:
-    image: confluentinc/cp-server:5.4.0
+    image: confluentinc/cp-server:6.0.1
     container_name: kafka
     restart: always
     depends_on:
       - zookeeper
     ports:
-      - "9094"
+      - "9094:9094"
       - "29092"
     environment:
       KAFKA_BROKER_ID: 1
@@ -32,7 +32,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
   schema-registry:
-    image: confluentinc/cp-schema-registry:5.4.0
+    image: confluentinc/cp-schema-registry:6.0.1
     container_name: schema-registry
     restart: always
     depends_on:
