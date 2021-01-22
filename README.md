@@ -52,9 +52,9 @@ docker exec -it kafka kafka-console-consumer --bootstrap-server kafka:9092 --top
 docker exec -it kafka kafka-consumer-groups --bootstrap-server kafka:9092 --describe --group to-uppercase
 ```
 
-### avec la DSL fonctionnelle
+### avec l'API Processor de bas niveau
 
-### avec l'API 
+### avec la DSL fonctionnelle
 
 ## à caser en quelque part
 
@@ -65,4 +65,4 @@ docker exec -it kafka kafka-consumer-groups --bootstrap-server kafka:9092 --desc
 # références
 
 - https://spring.io/blog/2019/12/09/stream-processing-with-spring-cloud-stream-and-apache-kafka-streams-part-6-state-stores-and-interactive-queries
-- https://www.youtube.com/watch?v=Z3JKCLG3VP4
+- https://www.youtube.com/watch?v=Z3JKCLG3VP4 
