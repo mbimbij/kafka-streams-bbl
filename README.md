@@ -2,6 +2,11 @@
 
 ## Kafka-streams kesako
 
+- Kafka 101
+  - producers, consumers, brokers
+  - topics & partitions
+  - consumer groups
+  - modèle de parallélisme
 - qu'est-ce qu'un stream
   - https://www.youtube.com/watch?v=Z3JKCLG3VP4&t=104
 - lib java standard
@@ -58,10 +63,88 @@ docker exec -it kafka kafka-consumer-groups --bootstrap-server kafka:9092 --desc
 
 ### tests unitaires
 
+### Récap
+
+- c'est quoi kafka-streams, de loin et dans les grandes lignes
+- doc Confluent
+  - Concepts
+    x Kafka 101
+    x Stream
+    x Stream Processing Application
+    x Processor Topology
+    x Stream Processor
+    - Stateful Stream Processing
+    - Duality of Streams and Tables
+    - KStream
+    - KTable
+    - GlobalKTable
+    - Time
+    - Aggregations
+    - Joins
+    - Windowing
+    - Interactive Queries
+    - Processing Guarantees ?
+    - Out-of-Order Handling ?
+    - Out-of-Order Terminology ?
+  - Architecture
+    - Processor Topology
+    - Parallelism Model
+      - Stream Partitions and Tasks
+      - Threading Model
+      - Example
+    - State
+
 ### variation - filtrage via ̀map` avec la DSL
 
-## exemple #2 - linesplit
+## exemple #2 - linesplit - julien drive
 
+
+
+## listing des concepts que j'aimerais aborder et illustrer
+
+- moi
+  - Joins
+- doc Apache Kafka
+  - Concepts
+    - Stream Processing Topology
+    - Time
+    - Duality of Streams and Tables 
+    - States (KTable, state stores)
+    - Aggregations
+    - Windowing
+  - Architecture
+    - Stream Partitions and Tasks
+    - Threading Model
+    - Local State Stores ?
+    - Fault Tolerance
+- doc Confluent
+  - Concepts
+    - Kafka 101
+    - Stream
+    - Stream Processing Application
+    - Processor Topology
+    - Stream Processor
+    - Stateful Stream Processing
+    - Duality of Streams and Tables
+    - KStream
+    - KTable
+    - GlobalKTable
+    - Time
+    - Aggregations
+    - Joins
+    - Windowing
+    - Interactive Queries
+    - Processing Guarantees ?
+    - Out-of-Order Handling ?
+    - Out-of-Order Terminology ?
+  - Architecture
+    - Processor Topology
+    - Parallelism Model
+      - Stream Partitions and Tasks
+      - Threading Model
+      - Example
+    - State
+  
 
 ## à caser en quelque part
 

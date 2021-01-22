@@ -7,20 +7,21 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Properties;
 
-public class ToUppercaseDslApplication {
+public class WordSplitDslApplication {
 
-  public static final String INPUT_TOPIC = "to-uppercase-input";
-  public static final String OUTPUT_TOPIC = "to-uppercase-output";
+  public static final String INPUT_TOPIC = "line-split-input";
+  public static final String OUTPUT_TOPIC = "line-split-output";
 
   @SneakyThrows
   public static void main(String[] args) {
     // initialisation des configs/props
     Properties properties = new Properties();
     properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9094");
-    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "to-uppercase-dsl");
+    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "line-split-dsl");
     properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
     properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
@@ -35,10 +36,9 @@ public class ToUppercaseDslApplication {
   public static Topology getTopology() {
     StreamsBuilder builder = new StreamsBuilder();
     builder.<String,String>stream(INPUT_TOPIC)
-        .mapValues(value -> value.toUpperCase(Locale.FRANCE))
+        .flatMapValues(value -> Arrays.asList(value.split("\\W+")))
         .to(OUTPUT_TOPIC);
-    Topology topology = builder.build();
-    return topology;
+    return builder.build();
   }
 
 }

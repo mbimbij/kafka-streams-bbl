@@ -5,6 +5,7 @@
 	<packaging>pom</packaging>
 	<modules>
 		<module>to-uppercase</module>
+		<module>line-split</module>
 	</modules>
 	<parent>
 		<groupId>org.springframework.boot</groupId>

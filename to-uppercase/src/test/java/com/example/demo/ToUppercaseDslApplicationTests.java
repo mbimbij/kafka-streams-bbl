@@ -19,16 +19,16 @@ class ToUppercaseDslApplicationTests {
 	private TopologyTestDriver testDriver;
 	private TestInputTopic<String, String> inputTopic;
 	private TestOutputTopic<String, String> outputTopic;
-	private Serde<String> stringSerde = new Serdes.StringSerde();
+	private final Serde<String> stringSerde = new Serdes.StringSerde();
 
 	@BeforeEach
 	void setUp() {
 		// set up properties for unit test
 		Properties properties = new Properties();
-		properties.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, "pipe");
+		properties.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, "dummy");
 		properties.setProperty(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "dummy");
-		properties.setProperty(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-		properties.setProperty(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+		properties.setProperty(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, stringSerde.getClass().getName());
+		properties.setProperty(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, stringSerde.getClass().getName());
 
 		// set up TopologyTestDriver
 		testDriver = new TopologyTestDriver(ToUppercaseDslApplication.getTopology(), properties);
