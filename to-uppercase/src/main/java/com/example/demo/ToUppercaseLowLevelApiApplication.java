@@ -16,6 +16,9 @@ import java.util.Properties;
 
 public class ToUppercaseLowLevelApiApplication {
 
+  public static final String INPUT_TOPIC = "to-uppercase-source";
+  public static final String OUTPUT_TOPIC = "to-uppercase-sink";
+
   @SneakyThrows
   public static void main(String[] args) {
     // initialisation des configs/props
@@ -33,11 +36,11 @@ public class ToUppercaseLowLevelApiApplication {
     streams.start();
   }
 
-  private static Topology getTopology() {
+  public static Topology getTopology() {
     Topology topology = new Topology();
-    topology.addSource("source", "to-uppercase-input");
+    topology.addSource("source", INPUT_TOPIC);
     topology.addProcessor("processor", ToUppercaseProcessor::new, "source");
-    topology.addSink("to-uppercase-input-sink", "to-uppercase-output","processor");
+    topology.addSink("sink", OUTPUT_TOPIC,"processor");
     return topology;
   }
 
