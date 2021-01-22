@@ -16,7 +16,8 @@
 - stream processing topology, vu de loin
   - https://kafka.apache.org/27/documentation/streams/core-concepts
 
-## exemple #1 - to-uppercase
+## exemple #1 - to-uppercase - je drive
+
 - créer les topics manuellement avant (sinon erreur au démarrage)
 ```shell
 docker exec -it kafka kafka-topics --create \
@@ -63,6 +64,10 @@ docker exec -it kafka kafka-consumer-groups --bootstrap-server kafka:9092 --desc
 
 ### tests unitaires
 
+### variation - filtrage via ̀map` avec la DSL
+
+## exemple #2 - linesplit - julien drive
+
 ### Récap
 
 - c'est quoi kafka-streams, de loin et dans les grandes lignes
@@ -94,11 +99,7 @@ docker exec -it kafka kafka-consumer-groups --bootstrap-server kafka:9092 --desc
       - Example
     - State
 
-### variation - filtrage via ̀map` avec la DSL
-
-## exemple #2 - linesplit - julien drive
-
-
+## exemple #3 - wordcount - je drive
 
 ## listing des concepts que j'aimerais aborder et illustrer
 
