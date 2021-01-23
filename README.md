@@ -117,20 +117,39 @@ Exposition du problème / ce que l'on va coder
 Exposition d'une solution pour résoudre le problème - "groupByValue" -> pas de stream vers un topic de sortie
   - idem avec stream vers un topic de sortie
 
+Introduction de la notion de dualité kstream / ktable.
+
+Concrètement, qu'est-ce qu'il se passe dans Kafka ?  Comment tout cela est-il implémenté
+
+Lister les topics
 Lecture du topic de changelog "illustration de la notion de state":
 ```shell
 docker exec -it kafka kafka-console-consumer --bootstrap-server kafka:9092 --topic wordcount-dsl-KSTREAM-AGGREGATE-STATE-STORE-0000000003-changelog --property print.key=true --property key.separator=" : " --value-deserializer "org.apache.kafka.common.serialization.LongDeserializer" --from-beginning
 ```
 
+Lecture du topic de repartition:
+
+```shell
+docker exec -it kafka kafka-console-consumer --bootstrap-server kafka:9092 --topic wordcount-dsl-KSTREAM-AGGREGATE-STATE-STORE-0000000003-repartition --property print.key=true --property key.separator=" : " --value-deserializer "org.apache.kafka.common.serialization.LongDeserializer" --from-beginning
+```
+
 Exposition d'un cas problématique -> groupByKey - changement du type de la value au cours d'un même traitement, nécessité de passer un table ou un topic intermédiaire pour changer de type, (problème se présentant aussi probablement si l'on change le type de la clé)
 Correction du cas problématique - groupByKey
+
+Lecture à nouveau du topic de changelog et de repartition
+
+Lecture du résultat -> introduction des Interactive Queries
+- on doit spécifier le nom d'un state-store dans `.count(Materialized.as("store-name"))`, sinon on ne peut pas créer de queryable state store on dirait
+- on note la création de nouveaux topics de changelog et de repartition, les anciens auto-générés ne sont plus utilisés si on spécifie le nom du state-store
+- suppression des topics de changelog et de repartition
+  - si l'appli tourne, cache local => l'appli est toujours fonctionnelle, les nouvelles données sont écrites dans le changelog, mais on a perdu les anciennes données du changelog lors de la suppression du topic (forcément)
+  - le compte est désormais à zéro
+
+Tests unitaires
+
 Laisser Julien driver pour un autre cas où l'on va changer le type des clés ou des valeurs
 
-Lecture du résultat -> introduction des Ktables et Interactive Queries
-
-
-
-### exemple #3 - wordcount - via api de bas niveau
+### exemple #3 - wordcount - via api de bas niveau ?
 
 ### Récap
 

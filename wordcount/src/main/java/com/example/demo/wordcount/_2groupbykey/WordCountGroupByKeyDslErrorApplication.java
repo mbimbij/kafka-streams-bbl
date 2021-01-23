@@ -1,16 +1,14 @@
-package com.example.demo;
+package com.example.demo.wordcount._2groupbykey;
 
 import lombok.SneakyThrows;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.Topology;
+import org.apache.kafka.streams.*;
+import org.apache.kafka.streams.kstream.Grouped;
 
 import java.util.Arrays;
 import java.util.Properties;
 
-public class WordCountGroupByValueDslApplication {
+public class WordCountGroupByKeyDslErrorApplication {
 
   public static final String INPUT_TOPIC = "wordcount-input";
   public static final String OUTPUT_TOPIC = "wordcount-output";
@@ -20,7 +18,7 @@ public class WordCountGroupByValueDslApplication {
     // initialisation des configs/props
     Properties properties = new Properties();
     properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9094");
-    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "wordcount-dsl");
+    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "wordcount-dsl-groupByKey");
     properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
     properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
@@ -34,12 +32,11 @@ public class WordCountGroupByValueDslApplication {
 
   public static Topology getTopology() {
     StreamsBuilder builder = new StreamsBuilder();
-    builder.<String,String>stream(INPUT_TOPIC)
+    builder.<String, String>stream(INPUT_TOPIC)
         .flatMapValues(value -> Arrays.asList(value.split("\\W+")))
-        .groupBy((key, value) -> value)
-        .count()
-        .toStream()
-        .to(OUTPUT_TOPIC);
+        .map((key, value) -> new KeyValue<>(value, 1))
+        .groupByKey()
+        .count();
     return builder.build();
   }
 
