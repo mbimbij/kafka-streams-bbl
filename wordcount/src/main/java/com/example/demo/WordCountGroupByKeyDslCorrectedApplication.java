@@ -3,6 +3,7 @@ package com.example.demo;
 import lombok.SneakyThrows;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.*;
+import org.apache.kafka.streams.kstream.Grouped;
 
 import java.util.Arrays;
 import java.util.Properties;
@@ -34,7 +35,7 @@ public class WordCountGroupByKeyDslCorrectedApplication {
     builder.<String, String>stream(INPUT_TOPIC)
         .flatMapValues(value -> Arrays.asList(value.split("\\W+")))
         .map((key, value) -> new KeyValue<>(value, 1))
-        .groupByKey()
+        .groupByKey(Grouped.valueSerde(Serdes.Integer()))
         .count();
     return builder.build();
   }
