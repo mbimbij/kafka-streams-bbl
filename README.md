@@ -149,7 +149,7 @@ Tests unitaires
 
 Laisser Julien driver pour un autre cas où l'on va changer le type des clés ou des valeurs
 
-### exemple #3 - wordcount - via api de bas niveau ?
+## exemple #3 - wordcount - via api de bas niveau ?
 
 ### Récap
 
@@ -184,6 +184,8 @@ Laisser Julien driver pour un autre cas où l'on va changer le type des clés ou
       - Threading Model
       - Example
     - State
+
+## exemple #4 - windowing -> let's fucking go !
 
 ## listing des concepts que j'aimerais aborder et illustrer
 
