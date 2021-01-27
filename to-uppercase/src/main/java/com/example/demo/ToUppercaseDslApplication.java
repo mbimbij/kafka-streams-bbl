@@ -37,8 +37,7 @@ public class ToUppercaseDslApplication {
     builder.<String,String>stream(INPUT_TOPIC)
         .mapValues(value -> value.toUpperCase(Locale.FRANCE))
         .to(OUTPUT_TOPIC);
-    Topology topology = builder.build();
-    return topology;
+    return builder.build();
   }
 
 }

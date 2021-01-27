@@ -21,7 +21,7 @@ public class SlidingWindowSum implements ApplicationRunner {
   public static final String INPUT_TOPIC = "sliding-window-mean-input";
   public static final String OUTPUT_TOPIC = "sliding-window-mean-output";
   public static final String STORE_NAME = "sliding-window-mean-store";
-  public static final int WINDOW_SIZE_MILLIS = 3000;
+  public static final int WINDOW_SIZE_MILLIS = 2000;
   private ReadOnlyWindowStore<String, Float> queryableStateStore;
 
   public static void main(String[] args) {
@@ -50,10 +50,8 @@ public class SlidingWindowSum implements ApplicationRunner {
     StreamsBuilder builder = new StreamsBuilder();
     builder.<String, Float>stream(INPUT_TOPIC)
         .groupByKey()
-        .windowedBy(SlidingWindows.withTimeDifferenceAndGrace(Duration.ofMillis(WINDOW_SIZE_MILLIS), Duration.ofMinutes(30)))
-//        .windowedBy(TimeWindows.of(Duration.ofSeconds(3)).advanceBy(Duration.ofSeconds(1)))
-        .reduce(Float::sum,
-            Materialized.as(STORE_NAME))
+        .windowedBy(SlidingWindows.withTimeDifferenceAndGrace(Duration.ofMillis(WINDOW_SIZE_MILLIS), Duration.ofMinutes(1)))
+        .reduce(Float::sum, Materialized.as(STORE_NAME))
         .toStream()
         .to(OUTPUT_TOPIC, Produced.keySerde(WindowedSerdes.timeWindowedSerdeFrom(String.class, WINDOW_SIZE_MILLIS)));
     return builder.build();

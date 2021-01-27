@@ -7,6 +7,7 @@ import org.apache.kafka.streams.kstream.Windowed;
 import org.apache.kafka.streams.kstream.WindowedSerdes;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.WindowStore;
+import org.apache.kafka.streams.state.WindowStoreIterator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,55 +55,43 @@ public class SlidingWindowSumTest {
   }
 
   @Test
-  void countWordsInOutputTopic() {
-    // given
+  void slidingWindowExplorationTest() {
+    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy'T'HH:mm:ss.SSSXXX");
 
-    // when
-//    DateTimeFormatter formatter =
-//        DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT )
-//            .withLocale( Locale.FRANCE )
-//            .withZone( ZoneId.systemDefault() );
+    Instant start = Instant.now();
+    System.out.println("coucou: "+dtf.format(ZonedDateTime.ofInstant(start, ZoneId.systemDefault())));
 
-    DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault());
-
-    Instant now = Instant.now();
-    System.out.println("coucou: "+formatter.format(now));
-
-    inputTopic.pipeInput("key", 1f, now);
+    inputTopic.pipeInput("key", 1f, start);
     System.out.println("#########################################################");
     System.out.println("après 1e évènement");
     System.out.println("#########################################################");
     printStore();
     printOutputTopic();
 
-    inputTopic.pipeInput("key", 1f, now.plusSeconds(1));
+    inputTopic.pipeInput("key", 1f, start.plusMillis(2500));
     System.out.println("#########################################################");
     System.out.println("après 2e évènement");
     System.out.println("#########################################################");
     printStore();
     printOutputTopic();
 
-    inputTopic.pipeInput("key", 1f, now.plusSeconds(2));
+    inputTopic.pipeInput("key", 1f, start.plusMillis(1000));
     System.out.println("#########################################################");
     System.out.println("après 3e évènement");
     System.out.println("#########################################################");
     printStore();
     printOutputTopic();
 
-//    inputTopic.pipeInput("key", 1f, now.plusSeconds(3));
-//    System.out.println("après 4e évènement");
-//    inputTopic.pipeInput("key", 1f, now.plusSeconds(4));
-//    System.out.println("après 5e évènement");
-//    inputTopic.pipeInput("key", 1f, now.plusSeconds(5));
-//
-//    System.out.println("après 6e évènement");
-//    inputTopic.pipeInput("key", 1f, now.plusSeconds(10));
-//    System.out.println("après 7e évènement");
-//    inputTopic.pipeInput("key", 1f, now.plusSeconds(11));
-//    System.out.println("après 8e évènement");
-//    inputTopic.pipeInput("key", 1f, now.plusSeconds(12));
-//    System.out.println("après 9e évènement");
-    // then
+    System.out.println("########### coucou début ###########");
+    System.out.println("coucou: "+dtf.format(ZonedDateTime.ofInstant(start, ZoneId.systemDefault())));
+    try (WindowStoreIterator<Float> iterator = store.fetch("key", start.minusMillis(400), start.minusMillis(200))) {
+      iterator.forEachRemaining(item -> System.out.printf("[%s, %f]%n",
+          dtf.format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(item.key), ZoneId.systemDefault())),
+          item.value
+      ));
+    }
+    System.out.println("########### coucou fin ###########");
+
   }
 
   private void printOutputTopic() {
