@@ -14,26 +14,20 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Duration;
 import java.util.*;
 
-@SpringBootApplication
-@RestController
 public class SlidingWindowSum implements ApplicationRunner {
 
-  public static final String INPUT_TOPIC = "sliding-window-mean-input";
-  public static final String OUTPUT_TOPIC = "sliding-window-mean-output";
-  public static final String STORE_NAME = "sliding-window-mean-store";
+  public static final String INPUT_TOPIC = "sliding-window-sum-input";
+  public static final String OUTPUT_TOPIC = "sliding-window-sum-output";
+  public static final String STORE_NAME = "sliding-window-sum-store";
   public static final int WINDOW_SIZE_MILLIS = 2000;
   private ReadOnlyWindowStore<String, Float> queryableStateStore;
-
-  public static void main(String[] args) {
-    SpringApplication.run(SlidingWindowSum.class, args);
-  }
 
   @Override
   public void run(ApplicationArguments args) {
     // initialisation des configs/props
     Properties properties = new Properties();
     properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9094");
-    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "sliding-window-mean");
+    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "sliding-window-sum");
     properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
     properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Float().getClass());
 
