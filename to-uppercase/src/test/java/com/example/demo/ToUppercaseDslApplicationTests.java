@@ -45,8 +45,13 @@ class ToUppercaseDslApplicationTests {
 
 	@Test
 	void shouldTransformToUppercase() {
+		//given
 		assertThat(outputTopic.isEmpty()).isTrue();
+
+		// when
 		inputTopic.pipeInput("hello");
+
+		// then
 		assertThat(outputTopic.isEmpty()).isFalse();
 		assertThat(outputTopic.readValue()).isEqualTo("HELLO");
 		assertThat(outputTopic.isEmpty()).isTrue();
