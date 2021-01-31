@@ -2,9 +2,9 @@ package com.example.demo;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.streams.Topology;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ConsumerSeekAware;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -28,24 +29,23 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest
 @ContextConfiguration(
     classes = {MultiPartitionJoinWithTimeTolerationIT.class, KafkaAutoConfiguration.class}
-//    ,initializers = MultiplePartitionsJoinsTest.class
+    , initializers = MultiPartitionJoinWithTimeTolerationIT.class
 )
 @EmbeddedKafka
     (
-    partitions = 2,
-    brokerProperties = {"listeners=PLAINTEXT://localhost:${kafka.port}", "port=${kafka.port}"},
-    topics = {"${test.topic}"}
-)
+        partitions = 2,
+        topics = {MultiPartitionJoinWithTimeToleration.INPUT_TOPIC_A, MultiPartitionJoinWithTimeToleration.INPUT_TOPIC_B, MultiPartitionJoinWithTimeToleration.OUTPUT_TOPIC}
+    )
 @ActiveProfiles("test")
 @Slf4j
 class MultiPartitionJoinWithTimeTolerationIT implements ConsumerSeekAware, ApplicationContextInitializer<ConfigurableApplicationContext> {
-  @Value("${test.topic}")
-  private String topic;
   @Autowired
   private KafkaTemplate<String, String> template;
   private boolean consumerReady = false;
+  @Autowired
+  private EmbeddedKafkaBroker embeddedKafkaBroker;
 
-  @KafkaListener(topics = "${test.topic}")
+  @KafkaListener(topics = MultiPartitionJoinWithTimeToleration.OUTPUT_TOPIC)
   private void consumer(String record) {
     log.info("received {}", record);
   }
@@ -60,16 +60,15 @@ class MultiPartitionJoinWithTimeTolerationIT implements ConsumerSeekAware, Appli
       throws Exception {
     await().atMost(Duration.ofSeconds(10))
         .until(() -> this.consumerReady);
-    template.send(topic, "hello world");
+    Topology topology = MultiPartitionJoinWithTimeToleration.getTopology();
     System.out.println();
   }
 
   @Override
   public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-    int embeddedKafkaPort = SocketUtils.findAvailableTcpPort();
+    String embeddedKafkaAddress = configurableApplicationContext.getEnvironment().getProperty("spring.embedded.kafka.brokers");
     TestPropertyValues.of(
-        String.format("spring.kafka.bootstrap-servers[0]=http://localhost:%d", embeddedKafkaPort ),
-        String.format("kafka.port=%d", embeddedKafkaPort)
+        String.format("spring.kafka.bootstrap-servers[0]=%s", embeddedKafkaAddress)
     ).applyTo(configurableApplicationContext.getEnvironment());
   }
 }

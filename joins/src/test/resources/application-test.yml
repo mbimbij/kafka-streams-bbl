@@ -1,12 +1,6 @@
-test.topic: input-topic
-
-kafka:
-  port: 9092
-
 spring:
   kafka:
-    bootstrap-servers:
-      - localhost:9092
+    bootstrap-servers: # random port -> defined at runtime
     security.protocol: PLAINTEXT
     consumer:
       group-id: test-consumer
