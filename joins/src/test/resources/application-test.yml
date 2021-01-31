@@ -1,0 +1,15 @@
+test.topic: input-topic
+
+kafka:
+  port: 9092
+
+spring:
+  kafka:
+    bootstrap-servers:
+      - localhost:9092
+    security.protocol: PLAINTEXT
+    consumer:
+      group-id: test-consumer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
