@@ -27,7 +27,7 @@
 
 	<properties>
 		<java.version>15</java.version>
-		<kafka-client.version>2.6.0</kafka-client.version>
+		<kafka-client.version>2.7.0</kafka-client.version>
 		<vavr.version>0.10.3</vavr.version>
 		<awaitility.version>4.0.3</awaitility.version>
 <!--		<spring-kafka.version>2.7.0-M1</spring-kafka.version>-->
