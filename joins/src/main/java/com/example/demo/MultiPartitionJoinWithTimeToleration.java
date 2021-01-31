@@ -18,10 +18,12 @@ public class MultiPartitionJoinWithTimeToleration implements ApplicationRunner {
   public static final String INPUT_TOPIC_A = "join_input_a";
   public static final String INPUT_TOPIC_B = "join_input_b";
   public static final String OUTPUT_TOPIC = "join-output";
+  private final int tolerationWindowSeconds;
   private final String bootstrapServers;
 
-  public MultiPartitionJoinWithTimeToleration(String bootstrapServers) {
+  public MultiPartitionJoinWithTimeToleration(String bootstrapServers, int tolerationWindowSeconds) {
     this.bootstrapServers = bootstrapServers;
+    this.tolerationWindowSeconds = tolerationWindowSeconds;
   }
 
   @Override
@@ -46,7 +48,7 @@ public class MultiPartitionJoinWithTimeToleration implements ApplicationRunner {
     return properties;
   }
 
-  public static Topology getTopology() {
+  public Topology getTopology() {
     StreamsBuilder builder = new StreamsBuilder();
     KStream<String, String> inputAStream = builder.stream(INPUT_TOPIC_A);
     KStream<String, String> inputBStream = builder.stream(INPUT_TOPIC_B);
@@ -54,7 +56,7 @@ public class MultiPartitionJoinWithTimeToleration implements ApplicationRunner {
         .join(
             inputBStream,
             (value1, value2) -> String.join(",", value1, value2),
-            JoinWindows.of(Duration.ofSeconds(10)))
+            JoinWindows.of(Duration.ofSeconds(tolerationWindowSeconds)))
         .to(OUTPUT_TOPIC);
     return builder.build();
   }

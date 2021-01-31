@@ -1,11 +1,13 @@
 package com.example.demo;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.Topology;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
@@ -18,12 +20,14 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Properties;
 
 import static com.example.demo.MultiPartitionJoinWithTimeToleration.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
 @SpringBootTest
 @ContextConfiguration(
@@ -34,7 +38,7 @@ import static org.awaitility.Awaitility.await;
     topics = {INPUT_TOPIC_A, INPUT_TOPIC_B, OUTPUT_TOPIC}
 )
 @ActiveProfiles("test")
-@Slf4j
+@TestInstance(PER_CLASS)
 class MultiPartitionJoinWithTimeTolerationIT implements ApplicationContextInitializer<ConfigurableApplicationContext> {
   @Autowired
   private KafkaTemplate<String, String> producer;
@@ -52,32 +56,41 @@ class MultiPartitionJoinWithTimeTolerationIT implements ApplicationContextInitia
     ).applyTo(configurableApplicationContext.getEnvironment());
   }
 
-  @BeforeEach
-  void setUp() {
-    MultiPartitionJoinWithTimeToleration streamApplication = new MultiPartitionJoinWithTimeToleration(embeddedKafkaBroker.getBrokersAsString());
-    Topology topology = MultiPartitionJoinWithTimeToleration.getTopology();
+  @BeforeAll
+  void beforeAll() {
+    MultiPartitionJoinWithTimeToleration streamApplication = new MultiPartitionJoinWithTimeToleration(embeddedKafkaBroker.getBrokersAsString(), 2);
+    Topology topology = streamApplication.getTopology();
     Properties properties = streamApplication.getProperties();
     kafkaStreams = new KafkaStreams(topology, properties);
     kafkaStreams.start();
     await().atMost(Duration.ofSeconds(10))
         .until(() -> listener.isReady());
-    listener.clear();
   }
 
-  @AfterEach
-  void tearDown() {
+  @AfterAll
+  void afterAll() {
     kafkaStreams.close();
     kafkaStreams.cleanUp();
   }
 
-  @Test
-  public void shouldJoin_whenSecondEventArrivesWithinTheTolerationWindow()
+  @BeforeEach
+  void setUp() {
+    listener.clear();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "0",
+      "1"
+  })
+  public void shouldJoin_whenSecondEventArrivesWithinTheTolerationWindow(int delaySeconds)
       throws Exception {
     // given
     String expectedRecord = "v1-1,v1-2";
 
     // when
     producer.send(INPUT_TOPIC_A, "k1", "v1-1");
+    Thread.sleep(delaySeconds * 1000L);
     producer.send(INPUT_TOPIC_B, "k1", "v1-2");
 
     // then

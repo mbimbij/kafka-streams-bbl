@@ -31,7 +31,8 @@ class MultiPartitionJoinWithTimeTolerationTest {
     properties.setProperty(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, stringSerde.getClass().getName());
 
     // set up TopologyTestDriver
-    testDriver = new TopologyTestDriver(MultiPartitionJoinWithTimeToleration.getTopology(), properties);
+    MultiPartitionJoinWithTimeToleration streamApplication = new MultiPartitionJoinWithTimeToleration("dummy", 10);
+    testDriver = new TopologyTestDriver(streamApplication.getTopology(), properties);
 
     // setup test topics
     inputTopicA = testDriver.createInputTopic(MultiPartitionJoinWithTimeToleration.INPUT_TOPIC_A, stringSerde.serializer(), stringSerde.serializer());
