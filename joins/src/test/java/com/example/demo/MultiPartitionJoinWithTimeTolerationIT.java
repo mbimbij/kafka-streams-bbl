@@ -18,9 +18,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Properties;
 
 import static com.example.demo.MultiPartitionJoinWithTimeToleration.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
@@ -39,7 +41,7 @@ class MultiPartitionJoinWithTimeTolerationIT implements ApplicationContextInitia
   @Autowired
   private EmbeddedKafkaBroker embeddedKafkaBroker;
   @Autowired
-  private TestListener listener;
+  private TestListenerIT listener;
   private KafkaStreams kafkaStreams;
 
   @Override
@@ -59,7 +61,7 @@ class MultiPartitionJoinWithTimeTolerationIT implements ApplicationContextInitia
     kafkaStreams.start();
     await().atMost(Duration.ofSeconds(10))
         .until(() -> listener.isReady());
-    System.out.println();
+    listener.clear();
   }
 
   @AfterEach
@@ -69,10 +71,20 @@ class MultiPartitionJoinWithTimeTolerationIT implements ApplicationContextInitia
   }
 
   @Test
-  public void givenEmbeddedKafkaBroker_whenSendingtoSimpleProducer_thenMessageReceived()
+  public void shouldJoin_whenSecondEventArrivesWithinTheTolerationWindow()
       throws Exception {
-    producer.send(OUTPUT_TOPIC, "hello world");
-    await().atMost(Duration.ofSeconds(3))
-        .until(() -> listener.getRecord("hello world").isPresent());
+    // given
+    String expectedRecord = "v1-1,v1-2";
+
+    // when
+    producer.send(INPUT_TOPIC_A, "k1", "v1-1");
+    producer.send(INPUT_TOPIC_B, "k1", "v1-2");
+
+    // then
+    List<String> joinedRecords = await()
+        .atMost(Duration.ofSeconds(5))
+        .until(() -> listener.getByKey("k1"), list -> !list.isEmpty());
+    assertThat(joinedRecords).hasSize(1);
+    assertThat(joinedRecords.get(0)).isEqualTo(expectedRecord);
   }
 }

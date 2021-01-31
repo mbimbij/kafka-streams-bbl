@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.listener.ConsumerSeekAware;
@@ -12,14 +13,16 @@ import static com.example.demo.MultiPartitionJoinWithTimeToleration.OUTPUT_TOPIC
 
 @Slf4j
 @Component
-public class TestListener implements ConsumerSeekAware {
+public class TestListenerIT implements ConsumerSeekAware {
   private boolean ready = false;
-  private List<String> receivedEvents = new ArrayList<>();
+  private Map<String, List<String>> receivedRecords = new HashMap<>();
 
   @KafkaListener(topics = OUTPUT_TOPIC)
-  private void consumer(String record) {
+  private void consumer(ConsumerRecord<String, String> record) {
     log.info("received {}", record);
-    receivedEvents.add(record);
+    String recordKey = record.key();
+    receivedRecords.putIfAbsent(recordKey, new ArrayList<>());
+    receivedRecords.get(recordKey).add(record.value());
   }
 
   @Override
@@ -32,11 +35,16 @@ public class TestListener implements ConsumerSeekAware {
     ready = true;
   }
 
+  public void clear() {
+    receivedRecords.clear();
+  }
+
   public boolean isReady() {
     return ready;
   }
 
-  public Optional<String> getRecord(String record){
-    return receivedEvents.stream().filter(s -> receivedEvents.contains(record)).findFirst();
+  public List<String> getByKey(String key){
+    receivedRecords.putIfAbsent(key, new ArrayList<>());
+    return receivedRecords.get(key);
   }
 }
