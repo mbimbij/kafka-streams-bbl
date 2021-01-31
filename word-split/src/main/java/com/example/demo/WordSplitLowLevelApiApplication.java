@@ -5,13 +5,10 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
-import org.apache.kafka.streams.processor.api.Processor;
-import org.apache.kafka.streams.processor.api.ProcessorContext;
-import org.apache.kafka.streams.processor.api.Record;
+import org.apache.kafka.streams.processor.Processor;
+import org.apache.kafka.streams.processor.ProcessorContext;
 
-import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.Properties;
 
 public class WordSplitLowLevelApiApplication {
@@ -44,23 +41,21 @@ public class WordSplitLowLevelApiApplication {
     return topology;
   }
 
-  private static class WordSplitProcessor implements Processor<String, String, String, String> {
-    private ProcessorContext<String, String> context;
+  private static class WordSplitProcessor implements Processor<String, String> {
+    private ProcessorContext context;
 
     @Override
-    public void init(ProcessorContext<String, String> context) {
+    public void init(ProcessorContext context) {
       this.context = context;
     }
 
     @Override
-    public void process(Record<String, String> record) {
-      Arrays.stream(record.value().split("\\W+"))
-          .forEach(split -> {
-            Record<String, String> processedRecord = new Record<>(record.key(),
-                split,
-                ZonedDateTime.now().toInstant().toEpochMilli());
-            context.forward(processedRecord);
-          });
+    public void process(String key, String value) {
+      Arrays.stream(value.split("\\W+"))
+          .forEach(split -> context.forward(key, split));
     }
+
+    @Override
+    public void close() {}
   }
 }
