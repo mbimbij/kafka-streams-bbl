@@ -1,68 +1,46 @@
 package com.example.demo;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.Topology;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.listener.ConsumerSeekAware;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.util.SocketUtils;
 
 import java.time.Duration;
-import java.util.Map;
+import java.util.Properties;
 
+import static com.example.demo.MultiPartitionJoinWithTimeToleration.*;
 import static org.awaitility.Awaitility.await;
 
-@Configuration
 @SpringBootTest
 @ContextConfiguration(
-    classes = {MultiPartitionJoinWithTimeTolerationIT.class, KafkaAutoConfiguration.class}
+    classes = {ConfigurationIT.class}
     , initializers = MultiPartitionJoinWithTimeTolerationIT.class
 )
-@EmbeddedKafka
-    (
-        partitions = 2,
-        topics = {MultiPartitionJoinWithTimeToleration.INPUT_TOPIC_A, MultiPartitionJoinWithTimeToleration.INPUT_TOPIC_B, MultiPartitionJoinWithTimeToleration.OUTPUT_TOPIC}
-    )
+@EmbeddedKafka(
+    topics = {INPUT_TOPIC_A, INPUT_TOPIC_B, OUTPUT_TOPIC}
+)
 @ActiveProfiles("test")
 @Slf4j
-class MultiPartitionJoinWithTimeTolerationIT implements ConsumerSeekAware, ApplicationContextInitializer<ConfigurableApplicationContext> {
+class MultiPartitionJoinWithTimeTolerationIT implements ApplicationContextInitializer<ConfigurableApplicationContext> {
   @Autowired
-  private KafkaTemplate<String, String> template;
-  private boolean consumerReady = false;
+  private KafkaTemplate<String, String> producer;
   @Autowired
   private EmbeddedKafkaBroker embeddedKafkaBroker;
-
-  @KafkaListener(topics = MultiPartitionJoinWithTimeToleration.OUTPUT_TOPIC)
-  private void consumer(String record) {
-    log.info("received {}", record);
-  }
-
-  @Override
-  public void onPartitionsAssigned(Map<TopicPartition, Long> assignments, ConsumerSeekCallback callback) {
-    consumerReady = true;
-  }
-
-  @Test
-  public void givenEmbeddedKafkaBroker_whenSendingtoSimpleProducer_thenMessageReceived()
-      throws Exception {
-    await().atMost(Duration.ofSeconds(10))
-        .until(() -> this.consumerReady);
-    Topology topology = MultiPartitionJoinWithTimeToleration.getTopology();
-    System.out.println();
-  }
+  @Autowired
+  private TestListener listener;
+  private KafkaStreams kafkaStreams;
 
   @Override
   public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
@@ -70,5 +48,31 @@ class MultiPartitionJoinWithTimeTolerationIT implements ConsumerSeekAware, Appli
     TestPropertyValues.of(
         String.format("spring.kafka.bootstrap-servers[0]=%s", embeddedKafkaAddress)
     ).applyTo(configurableApplicationContext.getEnvironment());
+  }
+
+  @BeforeEach
+  void setUp() {
+    MultiPartitionJoinWithTimeToleration streamApplication = new MultiPartitionJoinWithTimeToleration(embeddedKafkaBroker.getBrokersAsString());
+    Topology topology = MultiPartitionJoinWithTimeToleration.getTopology();
+    Properties properties = streamApplication.getProperties();
+    kafkaStreams = new KafkaStreams(topology, properties);
+    kafkaStreams.start();
+    await().atMost(Duration.ofSeconds(10))
+        .until(() -> listener.isReady());
+    System.out.println();
+  }
+
+  @AfterEach
+  void tearDown() {
+    kafkaStreams.close();
+    kafkaStreams.cleanUp();
+  }
+
+  @Test
+  public void givenEmbeddedKafkaBroker_whenSendingtoSimpleProducer_thenMessageReceived()
+      throws Exception {
+    producer.send(OUTPUT_TOPIC, "hello world");
+    await().atMost(Duration.ofSeconds(3))
+        .until(() -> listener.getRecord("hello world").isPresent());
   }
 }

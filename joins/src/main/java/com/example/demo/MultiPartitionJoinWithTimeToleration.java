@@ -18,15 +18,16 @@ public class MultiPartitionJoinWithTimeToleration implements ApplicationRunner {
   public static final String INPUT_TOPIC_A = "join_input_a";
   public static final String INPUT_TOPIC_B = "join_input_b";
   public static final String OUTPUT_TOPIC = "join-output";
+  private final String bootstrapServers;
+
+  public MultiPartitionJoinWithTimeToleration(String bootstrapServers) {
+    this.bootstrapServers = bootstrapServers;
+  }
 
   @Override
   public void run(ApplicationArguments args) {
     // initialisation des configs/props
-    Properties properties = new Properties();
-    properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9094");
-    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "sliding-window-sum");
-    properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-    properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+    Properties properties = getProperties();
 
     // définition de la "topologie" -> le stream processing que l'on va appliquer
     Topology topology = getTopology();
@@ -34,6 +35,15 @@ public class MultiPartitionJoinWithTimeToleration implements ApplicationRunner {
     // lancement de l'application kafka streams et création du queryable state store
     KafkaStreams streams = new KafkaStreams(topology, properties);
     streams.start();
+  }
+
+  public Properties getProperties() {
+    Properties properties = new Properties();
+    properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "sliding-window-sum");
+    properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+    properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+    return properties;
   }
 
   public static Topology getTopology() {
