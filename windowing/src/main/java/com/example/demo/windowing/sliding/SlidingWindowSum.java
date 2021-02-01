@@ -44,7 +44,8 @@ public class SlidingWindowSum implements ApplicationRunner {
     StreamsBuilder builder = new StreamsBuilder();
     builder.<String, Float>stream(INPUT_TOPIC)
         .groupByKey()
-        .windowedBy(SlidingWindows.withTimeDifferenceAndGrace(Duration.ofMillis(WINDOW_SIZE_MILLIS), Duration.ofMinutes(1)))
+//        .windowedBy(SlidingWindows.withTimeDifferenceAndGrace(Duration.ofMillis(WINDOW_SIZE_MILLIS), Duration.ofMinutes(1)))
+        .windowedBy(TimeWindows.of(Duration.ofMillis(WINDOW_SIZE_MILLIS)).grace(Duration.ofMinutes(1)))
         .reduce(Float::sum, Materialized.as(STORE_NAME))
         .toStream()
         .to(OUTPUT_TOPIC, Produced.keySerde(WindowedSerdes.timeWindowedSerdeFrom(String.class, WINDOW_SIZE_MILLIS)));

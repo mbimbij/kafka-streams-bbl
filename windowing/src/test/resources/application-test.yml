@@ -1,0 +1,9 @@
+spring:
+  kafka:
+    bootstrap-servers: # random port -> defined at runtime
+    security.protocol: PLAINTEXT
+    consumer:
+      group-id: test-consumer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer

@@ -7,8 +7,6 @@ import org.apache.kafka.streams.kstream.Windowed;
 import org.apache.kafka.streams.kstream.WindowedSerdes;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.WindowStore;
-import org.apache.kafka.streams.state.WindowStoreIterator;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,10 +19,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 
-import static org.assertj.core.api.Assertions.assertThat;
 
-
-public class HoppingWindowSumTest {
+public class HoppingWindowSumSuppressedTest {
   private TopologyTestDriver testDriver;
   private TestInputTopic<String, Float> inputTopic;
   private TestOutputTopic<Windowed<String>, Float> outputTopic;
@@ -34,22 +30,18 @@ public class HoppingWindowSumTest {
 
   @BeforeEach
   void setUp() {
-    // set up properties for unit test
-    Properties properties = new Properties();
-    properties.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, "dummy");
-    properties.setProperty(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "dummy");
-    properties.setProperty(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, stringSerde.getClass().getName());
-    properties.setProperty(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, floatSerde.getClass().getName());
-
     // set up TopologyTestDriver
-    testDriver = new TopologyTestDriver(HoppingWindowSum.getTopology(), properties);
+    HoppingWindowSumSuppressed streamApplication = new HoppingWindowSumSuppressed("dummy", 3);
+    Topology topology = streamApplication.getTopology();
+    Properties properties = streamApplication.getProperties();
+    testDriver = new TopologyTestDriver(topology, properties);
 
     // setup test topics
-    inputTopic = testDriver.createInputTopic(HoppingWindowSum.INPUT_TOPIC, stringSerde.serializer(), floatSerde.serializer());
-    outputTopic = testDriver.createOutputTopic(HoppingWindowSum.OUTPUT_TOPIC, WindowedSerdes.timeWindowedSerdeFrom(String.class, HoppingWindowSum.WINDOW_SIZE_MILLIS).deserializer(), floatSerde.deserializer());
+    inputTopic = testDriver.createInputTopic(HoppingWindowSumSuppressed.INPUT_TOPIC, stringSerde.serializer(), floatSerde.serializer());
+    outputTopic = testDriver.createOutputTopic(HoppingWindowSumSuppressed.OUTPUT_TOPIC, WindowedSerdes.timeWindowedSerdeFrom(String.class, HoppingWindowSumSuppressed.WINDOW_SIZE_MILLIS).deserializer(), floatSerde.deserializer());
 
     // setup test state store
-    store = testDriver.getWindowStore(HoppingWindowSum.STORE_NAME);
+    store = testDriver.getWindowStore(HoppingWindowSumSuppressed.STORE_NAME);
   }
 
   @AfterEach
@@ -58,7 +50,7 @@ public class HoppingWindowSumTest {
   }
 
   @Test
-  void hoppingWindowExplorationTest() {
+  void hoppingWindowExplorationTest() throws InterruptedException {
     DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy'T'HH:mm:ss.SSSXXX");
 
     Instant start = Instant.now();
@@ -71,46 +63,26 @@ public class HoppingWindowSumTest {
     printStore();
     printOutputTopic();
 
-    inputTopic.pipeInput("key", 1f, start.plusMillis(1500));
+    inputTopic.pipeInput("key", 1f, start.plusMillis(1));
     System.out.println("#########################################################");
     System.out.println("après 2e évènement - " + dtf.format(ZonedDateTime.ofInstant(start, ZoneId.systemDefault())));
     System.out.println("#########################################################");
     printStore();
     printOutputTopic();
 
-    inputTopic.pipeInput("key", 1f, start.plusMillis(2000));
+    inputTopic.pipeInput("key", 1f, start.plusMillis(2));
     System.out.println("#########################################################");
     System.out.println("après 3e évènement - " + dtf.format(ZonedDateTime.ofInstant(start, ZoneId.systemDefault())));
     System.out.println("#########################################################");
     printStore();
     printOutputTopic();
-  }
 
-  @Test
-  void whenEventsArePublishedAfterGracePeriod_thenTheyAreNotIncludedInWindow() {
-    // given
-    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy'T'HH:mm:ss.SSSXXX");
-    Instant start = Instant.now();
-    System.out.println("start: " + dtf.format(ZonedDateTime.ofInstant(start, ZoneId.systemDefault())));
-    assertThat(outputTopic.isEmpty()).isTrue();
+    Thread.sleep(10000);
 
-    // when - then
-    inputTopic.pipeInput("key", 1f, start);
-//    assertThat(outputTopic.isEmpty()).isFalse();
-//    outputTopic.readKeyValuesToList();
-//    assertThat(outputTopic.isEmpty()).isTrue();
+    testDriver.advanceWallClockTime(Duration.ofMinutes(2));
+    inputTopic.pipeInput("key", 1f, start.plusMillis(2));
     System.out.println("#########################################################");
-    System.out.println("après 1e évènement - " + dtf.format(ZonedDateTime.ofInstant(start, ZoneId.systemDefault())));
-    System.out.println("#########################################################");
-    printStore();
-    printOutputTopic();
-
-    // when - then
-    testDriver.advanceWallClockTime(Duration.ofMinutes(12));
-    inputTopic.pipeInput("key", 1f, start);
-//    assertThat(outputTopic.isEmpty()).isTrue();
-    System.out.println("#########################################################");
-    System.out.println("après 2e évènement - " + dtf.format(ZonedDateTime.ofInstant(start, ZoneId.systemDefault())));
+    System.out.println("après attente fermeture fenêtre - " + dtf.format(ZonedDateTime.ofInstant(start, ZoneId.systemDefault())));
     System.out.println("#########################################################");
     printStore();
     printOutputTopic();
