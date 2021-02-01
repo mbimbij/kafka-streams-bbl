@@ -16,13 +16,14 @@ public class HoppingWindowSumSuppressed implements ApplicationRunner {
   public static final String INPUT_TOPIC = "hopping-window-sum-input";
   public static final String OUTPUT_TOPIC = "hopping-window-sum-output";
   public static final String STORE_NAME = "hopping-window-sum-store";
-  public static final int WINDOW_SIZE_MILLIS = 3000;
-  private final int gracePeriodSeconds;
   private ReadOnlyWindowStore<String, Float> queryableStateStore;
   private final String brokers;
+  private final int windowSizeMillis;
+  private final int gracePeriodSeconds;
 
-  public HoppingWindowSumSuppressed(String brokers, int gracePeriodSeconds) {
+  public HoppingWindowSumSuppressed(String brokers, int windowSizeMillis, int gracePeriodSeconds) {
     this.brokers = brokers;
+    this.windowSizeMillis = windowSizeMillis;
     this.gracePeriodSeconds = gracePeriodSeconds;
   }
 
@@ -53,12 +54,20 @@ public class HoppingWindowSumSuppressed implements ApplicationRunner {
     StreamsBuilder builder = new StreamsBuilder();
     builder.<String, Float>stream(INPUT_TOPIC)
         .groupByKey(Grouped.with(Serdes.String(),Serdes.Float()))
-        .windowedBy(TimeWindows.of(Duration.ofMillis(WINDOW_SIZE_MILLIS)).grace(Duration.ofSeconds(gracePeriodSeconds)))
+        .windowedBy(TimeWindows.of(Duration.ofMillis(windowSizeMillis)).grace(Duration.ofSeconds(gracePeriodSeconds)))
         .reduce(Float::sum, Materialized.as(STORE_NAME))
-        .suppress(Suppressed.untilTimeLimit(Duration.ofMillis(WINDOW_SIZE_MILLIS).plusSeconds(gracePeriodSeconds), Suppressed.BufferConfig.unbounded()))
+//        .suppress(Suppressed.untilTimeLimit(Duration.ofMillis(windowSizeMillis).plusSeconds(gracePeriodSeconds), Suppressed.BufferConfig.unbounded()))
 //        .suppress(Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
         .toStream()
-        .to(OUTPUT_TOPIC, Produced.keySerde(WindowedSerdes.timeWindowedSerdeFrom(String.class, WINDOW_SIZE_MILLIS)));
+        .to(OUTPUT_TOPIC, Produced.keySerde(WindowedSerdes.timeWindowedSerdeFrom(String.class, windowSizeMillis)));
     return builder.build();
+  }
+
+  public int getWindowSizeMillis() {
+    return windowSizeMillis;
+  }
+
+  public int getGracePeriodSeconds() {
+    return gracePeriodSeconds;
   }
 }

@@ -5,9 +5,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.Topology;
+import org.apache.kafka.streams.kstream.TimeWindowedDeserializer;
+import org.apache.kafka.streams.kstream.Windowed;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -44,17 +44,18 @@ import static org.springframework.kafka.support.KafkaHeaders.TOPIC;
 @Slf4j
 class HoppingWindowSumSuppressedIT {
   @Autowired
-  private KafkaTemplate<String, String> producer;
+  private KafkaTemplate<String, Float> producer;
   @Autowired
   private EmbeddedKafkaBroker embeddedKafkaBroker;
   @Autowired
   private TestListenerIT listener;
   private KafkaStreams kafkaStreams;
+  private static final int WINDOW_SIZE_MILLIS = 2000;
   private static final int TOLERATION_WINDOW_SECONDS = 3;
 
   @BeforeAll
   void beforeAll() {
-    HoppingWindowSumSuppressed streamApplication = new HoppingWindowSumSuppressed(embeddedKafkaBroker.getBrokersAsString(), TOLERATION_WINDOW_SECONDS);
+    HoppingWindowSumSuppressed streamApplication = new HoppingWindowSumSuppressed(embeddedKafkaBroker.getBrokersAsString(), WINDOW_SIZE_MILLIS, TOLERATION_WINDOW_SECONDS);
     Topology topology = streamApplication.getTopology();
     Properties properties = streamApplication.getProperties();
     kafkaStreams = new KafkaStreams(topology, properties);
@@ -75,14 +76,12 @@ class HoppingWindowSumSuppressedIT {
   }
 
   @Test
-  public void shouldNotJoin_whenSecondEventArrivesAfterTheTolerationWindow() {
+  public void shouldNotJoin_whenSecondEventArrivesAfterTheTolerationWindow() throws InterruptedException {
     // given
-    String expectedRecord = String.join(",", "v1-1", "v1-2");
     long nowMillis = Instant.now().toEpochMilli();
-    log.info("expected record: {}", expectedRecord);
     long delaySeconds = TOLERATION_WINDOW_SECONDS + 1;
-    Message<String> message1 = MessageBuilder
-        .withPayload("v1-1")
+    Message<Float> message1 = MessageBuilder
+        .withPayload(1.0f)
         .setHeader(KafkaHeaders.MESSAGE_KEY, "k1")
         .setHeader(KafkaHeaders.TIMESTAMP, nowMillis)
         .setHeader(TOPIC, INPUT_TOPIC)
@@ -92,9 +91,11 @@ class HoppingWindowSumSuppressedIT {
     producer.send(message1);
 
     // then - waiting for the join result throws an exception - since it is outside of the toleration window
-    assertThatThrownBy(() -> await()
-        .atMost(Duration.ofSeconds(3))
-        .until(() -> listener.getByKey("k1"), list -> list.contains(expectedRecord)));
+    await()
+        .atMost(Duration.ofSeconds(5))
+        .until(() -> !listener.getReceivedRecords().isEmpty());
+//    Thread.sleep(6000);
+    System.out.println();
   }
 
   @SpringBootConfiguration
@@ -107,14 +108,14 @@ class HoppingWindowSumSuppressedIT {
   @Component
   public static class TestListenerIT implements ConsumerSeekAware {
     private boolean ready = false;
-    private Map<String, List<String>> receivedRecords = new HashMap<>();
+//    private Map<String, List<String>> receivedRecords = new HashMap<>();
+    private List<ConsumerRecord<TimeWindowedDeserializer<String>, Float>> receivedRecords = new ArrayList<>();
 
     @KafkaListener(topics = OUTPUT_TOPIC)
-    private void consumer(ConsumerRecord<String, String> record) {
-      log.info("received {}", record);
-      String recordKey = record.key();
-      receivedRecords.putIfAbsent(recordKey, new ArrayList<>());
-      receivedRecords.get(recordKey).add(record.value());
+    private void consumer(ConsumerRecord<TimeWindowedDeserializer<String>, Float> record) {
+      log.info("coucou received {}", record);
+      receivedRecords.add(record);
+      System.out.println();
     }
 
     @Override
@@ -135,9 +136,8 @@ class HoppingWindowSumSuppressedIT {
       return ready;
     }
 
-    public List<String> getByKey(String key){
-      receivedRecords.putIfAbsent(key, new ArrayList<>());
-      return receivedRecords.get(key);
+    public List<ConsumerRecord<TimeWindowedDeserializer<String>, Float>> getReceivedRecords() {
+      return receivedRecords;
     }
   }
 }

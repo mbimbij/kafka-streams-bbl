@@ -31,14 +31,14 @@ public class HoppingWindowSumSuppressedTest {
   @BeforeEach
   void setUp() {
     // set up TopologyTestDriver
-    HoppingWindowSumSuppressed streamApplication = new HoppingWindowSumSuppressed("dummy", 3);
+    HoppingWindowSumSuppressed streamApplication = new HoppingWindowSumSuppressed("dummy", 3000, 3);
     Topology topology = streamApplication.getTopology();
     Properties properties = streamApplication.getProperties();
     testDriver = new TopologyTestDriver(topology, properties);
 
     // setup test topics
     inputTopic = testDriver.createInputTopic(HoppingWindowSumSuppressed.INPUT_TOPIC, stringSerde.serializer(), floatSerde.serializer());
-    outputTopic = testDriver.createOutputTopic(HoppingWindowSumSuppressed.OUTPUT_TOPIC, WindowedSerdes.timeWindowedSerdeFrom(String.class, HoppingWindowSumSuppressed.WINDOW_SIZE_MILLIS).deserializer(), floatSerde.deserializer());
+    outputTopic = testDriver.createOutputTopic(HoppingWindowSumSuppressed.OUTPUT_TOPIC, WindowedSerdes.timeWindowedSerdeFrom(String.class, streamApplication.getWindowSizeMillis()).deserializer(), floatSerde.deserializer());
 
     // setup test state store
     store = testDriver.getWindowStore(HoppingWindowSumSuppressed.STORE_NAME);
@@ -76,8 +76,6 @@ public class HoppingWindowSumSuppressedTest {
     System.out.println("#########################################################");
     printStore();
     printOutputTopic();
-
-    Thread.sleep(10000);
 
     testDriver.advanceWallClockTime(Duration.ofMinutes(2));
     inputTopic.pipeInput("key", 1f, start.plusMillis(2));

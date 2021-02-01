@@ -16,17 +16,21 @@ public class HoppingWindowSum implements ApplicationRunner {
   public static final String INPUT_TOPIC = "hopping-window-sum-input";
   public static final String OUTPUT_TOPIC = "hopping-window-sum-output";
   public static final String STORE_NAME = "hopping-window-sum-store";
-  public static final int WINDOW_SIZE_MILLIS = 3000;
   private ReadOnlyWindowStore<String, Float> queryableStateStore;
+  private final String brokers;
+  private final int windowSizeMillis;
+  private final int gracePeriodSeconds;
+
+  public HoppingWindowSum(String brokers, int windowSizeMillis, int gracePeriodSeconds) {
+    this.brokers = brokers;
+    this.windowSizeMillis = windowSizeMillis;
+    this.gracePeriodSeconds = gracePeriodSeconds;
+  }
 
   @Override
   public void run(ApplicationArguments args) {
     // initialisation des configs/props
-    Properties properties = new Properties();
-    properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9094");
-    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "hopping-window-sum");
-    properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-    properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Float().getClass());
+    Properties properties = getProperties();
 
     // définition de la "topologie" -> le stream processing que l'on va appliquer
     Topology topology = getTopology();
@@ -37,14 +41,23 @@ public class HoppingWindowSum implements ApplicationRunner {
     queryableStateStore = streams.store(StoreQueryParameters.fromNameAndType(STORE_NAME, QueryableStoreTypes.windowStore()));
   }
 
-  public static Topology getTopology() {
+  public Properties getProperties() {
+    Properties properties = new Properties();
+    properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
+    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "hopping-window-sum");
+    properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+    properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Float().getClass());
+    return properties;
+  }
+
+  public Topology getTopology() {
     StreamsBuilder builder = new StreamsBuilder();
     builder.<String, Float>stream(INPUT_TOPIC)
         .groupByKey()
-        .windowedBy(TimeWindows.of(Duration.ofMillis(WINDOW_SIZE_MILLIS)).grace(Duration.ofMinutes(1)))
+        .windowedBy(TimeWindows.of(Duration.ofMillis(windowSizeMillis)).grace(Duration.ofMinutes(1)))
         .reduce(Float::sum, Materialized.as(STORE_NAME))
         .toStream()
-        .to(OUTPUT_TOPIC, Produced.keySerde(WindowedSerdes.timeWindowedSerdeFrom(String.class, WINDOW_SIZE_MILLIS)));
+        .to(OUTPUT_TOPIC, Produced.keySerde(WindowedSerdes.timeWindowedSerdeFrom(String.class, windowSizeMillis)));
     return builder.build();
   }
 }

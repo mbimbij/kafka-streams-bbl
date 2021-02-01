@@ -42,11 +42,12 @@ public class HoppingWindowSumTest {
     properties.setProperty(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, floatSerde.getClass().getName());
 
     // set up TopologyTestDriver
-    testDriver = new TopologyTestDriver(HoppingWindowSum.getTopology(), properties);
+    HoppingWindowSumSuppressed streamApplication = new HoppingWindowSumSuppressed("dummy", 3000, 3);
+    testDriver = new TopologyTestDriver(streamApplication.getTopology(), properties);
 
     // setup test topics
     inputTopic = testDriver.createInputTopic(HoppingWindowSum.INPUT_TOPIC, stringSerde.serializer(), floatSerde.serializer());
-    outputTopic = testDriver.createOutputTopic(HoppingWindowSum.OUTPUT_TOPIC, WindowedSerdes.timeWindowedSerdeFrom(String.class, HoppingWindowSum.WINDOW_SIZE_MILLIS).deserializer(), floatSerde.deserializer());
+    outputTopic = testDriver.createOutputTopic(HoppingWindowSum.OUTPUT_TOPIC, WindowedSerdes.timeWindowedSerdeFrom(String.class, streamApplication.getWindowSizeMillis()).deserializer(), floatSerde.deserializer());
 
     // setup test state store
     store = testDriver.getWindowStore(HoppingWindowSum.STORE_NAME);
